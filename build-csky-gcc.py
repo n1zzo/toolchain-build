@@ -100,7 +100,7 @@ def cmd_exec(options, cmd, out = True, fake = True):
 		cmd = cmd.replace(make_src, make_dst + " ")
 
 	if options.fake and fake:
-		print "exec command: " + cmd
+		print("exec command: " + cmd)
 		return ("", "fake command :)\n", 0)
 	if sys.version_info >= (2, 4):
 		import subprocess
@@ -126,10 +126,10 @@ def cmd_exec_is_error(r, e):
 	if r != 0:
 		t = True
 	if t:
-		print "\n--> start error output\n"
-		print "error code: %d" % r
-		print "%s" % e
-		print "<-- end error output\n"
+		print("\n--> start error output\n")
+		print("error code: %d" % r)
+		print("%s" % e)
+		print("<-- end error output\n")
 	return t
 
 def get_component(options, mm):
@@ -138,8 +138,8 @@ def get_component(options, mm):
 		mm = getattr(options, mm.lstrip("-").replace("-", "_"))
 
 	mm = mm.split(".")
-	if mm[0] not in component.keys():
-		print "\n*** component '%s' is not supported :( ***\n*** Please use -h for more detail ***\n" % mm[0]
+	if mm[0] not in list(component.keys()):
+		print("\n*** component '%s' is not supported :( ***\n*** Please use -h for more detail ***\n" % mm[0])
 		sys.exit(2)
 
 	stage_nums = len(component[mm[0]]["worker"])
@@ -148,8 +148,8 @@ def get_component(options, mm):
 	if len(mm) > 1:
 		stage = int(mm[1])
 		if stage >= stage_nums:
-			print "\n*** stage %s is out of max stage %s of component '%s' ***\n" \
-				  % (stage, stage_nums - 1, mm[0])
+			print("\n*** stage %s is out of max stage %s of component '%s' ***\n" \
+				  % (stage, stage_nums - 1, mm[0]))
 			sys.exit(2)
 	mm = mm[0]
 	#print "\n<-- get component: '%s' stage: %s" % (mm, stage)
@@ -205,7 +205,7 @@ def build_cmd(options, fformat, vvar = None):
 	cc = cmd.split(" ")
 	for c in cc:
 		for patten in options.cmd_compatibility:
-			for p in patten.keys():
+			for p in list(patten.keys()):
 				if c.find(p) != -1:
 					cmd = cmd.replace(c, patten[p])
 	return cmd
@@ -220,7 +220,7 @@ def cmd_exec_with_checkerr(options, cmd, out = True, fake = True):
 	cmd = path + cmd
 	(o, e, r) = cmd_exec(options, cmd, out, fake)
 	if cmd_exec_is_error(r, e):
-		print "exec command: " + cmd
+		print("exec command: " + cmd)
 		sys.exit(2)
 	return o
 
@@ -228,7 +228,7 @@ def cmd_exec_ret_with_checkerr(options, cmd):
 	return cmd_exec_with_checkerr(options, cmd, False, False).strip()
 
 def build_return(options, mm, stage = 0):
-	if "cmd_post" in component[mm].keys():
+	if "cmd_post" in list(component[mm].keys()):
 		cmd_exec_with_checkerr(options, component[mm]["cmd_post"])
 	f = get_finished_target(options, mm, stage)
 	cmd_exec_with_checkerr(options, "touch '%s'" % f)
@@ -238,23 +238,23 @@ def build_return(options, mm, stage = 0):
 def build_start(options, mm, stage = 0):
 	m = mm
 	if len(component[mm]["worker"]) != 1: m += "." + str(stage)
-	print "\n====> start building component '%s' ... ..." % m
+	print("\n====> start building component '%s' ... ..." % m)
 
 	component[mm]["append"] = ""
 	# used for post exec
 	component[mm]["cmd_post"] = ""
 
-	if "bos" in component[mm].keys():
-		print "--> current building platform/os is \"%s\"" % sys.platform
+	if "bos" in list(component[mm].keys()):
+		print("--> current building platform/os is \"%s\"" % sys.platform)
 		component[mm]["bos"](options, mm, sys.platform)
 
-	if "tos" in component[mm].keys():
+	if "tos" in list(component[mm].keys()):
 		tos = component[mm]["tos"]
 		isFunction = hasattr(tos, '__call__')
 		if isFunction:
 			tos(options, mm, options.tos, stage)
 		else:
-			if options.tos in component[mm]["tos"].keys():
+			if options.tos in list(component[mm]["tos"].keys()):
 				tos = component[mm]["tos"][options.tos]
 				isFunction = hasattr(tos, '__call__')
 				if isFunction:
@@ -262,14 +262,14 @@ def build_start(options, mm, stage = 0):
 				else:
 					component[mm]["append"] += tos + " "
 
-	if "default" in component[mm].keys():
+	if "default" in list(component[mm].keys()):
 		component[mm]["append"] += component[mm]["default"] + " "
 
 	if get_component_is_debug(options, mm):
-		if "debug" in component[mm].keys():
+		if "debug" in list(component[mm].keys()):
 			component[mm]["append"] += component[mm]["debug"] + " "
 		else:
-			print "<-- current component do not support debug version"
+			print("<-- current component do not support debug version")
 
 	attr = mm.replace("-", "_") + "_build"
 	bdir = getattr(options, attr)
@@ -284,7 +284,7 @@ def build_start(options, mm, stage = 0):
 		if umm == mm and ustage == stage:
 			options.update = "%s.%s.update" % (umm, str(ustage))
 		if options.update.split(".")[-1] == "update":
-			print "--> recompile the module %s, it depends on %s" % (os.path.basename(f), options.update.split(".")[:-2])
+			print("--> recompile the module %s, it depends on %s" % (os.path.basename(f), options.update.split(".")[:-2]))
 			cmd_exec_with_checkerr(options, "rm -rf %s" % f)
 			cmd_exec_with_checkerr(options, "rm -rf %s.*" % f)
 
@@ -317,7 +317,7 @@ def build_is_finished(options, target, real = False):
 			return False
 	if os.path.isfile(target):
 		t = os.path.basename(target)
-		print "<-- current component '%s' has finished" % t.strip(".")
+		print("<-- current component '%s' has finished" % t.strip("."))
 		build_log(options, "%s has already finished" % t)
 		return True
 	return False
@@ -381,7 +381,7 @@ def build_gcc_base(options):
 		deps = options.gcc_dep_libs.replace(" ", "").split(",")
 		libs = {"--with-mpc" : deps[0], "--with-mpfr" : deps[0], "--with-gmp" : deps[0]}
 		gcc_dep_libs = ""
-		for (k, v) in libs.items():
+		for (k, v) in list(libs.items()):
 			if deps: v = deps.pop(0)
 			gcc_dep_libs += "%s=%s " % (k, v)
 		cmd += build_cmd(options, "%s", gcc_dep_libs)
@@ -430,7 +430,7 @@ def build_gcc_compatibility(options, component_chain):
 		if options.no_multilib:
 			opts = component["gcc"]["no-multilib"][options.abi]
 			if options.no_multilib != opts:
-				print "<-- do not support non-default configuration for no multilib"
+				print("<-- do not support non-default configuration for no multilib")
 				return False
 		# compatibility cmd
 		build_cmd_compatibility(options, "--with-cpu")
@@ -598,11 +598,11 @@ def get_gcc_multilib_install_dir(options, argv = "", root = None):
 					"mcpu=ck803f" : "ck803", "mcpu=ck860" : "ck860",
 				},
 	}
-	for (k, v) in dirs.items():
+	for (k, v) in list(dirs.items()):
 		if k and not options.tos.startswith(k):
 			continue
 		cpu = get_gcc_multilib_opt(argv, "mcpu=")
-		if cpu in v.keys():
+		if cpu in list(v.keys()):
 			install += "/%s" % v[cpu]
 			break
 
@@ -630,7 +630,7 @@ def get_gcc_multilib_compiler_flags(options, mm, argv = "", f = ""):
 	}
 	if f: flags = f
 
-	for (k, v) in flags.items():
+	for (k, v) in list(flags.items()):
 		if not k and v:
 			flag += build_cmd(options, v)
 			continue
@@ -712,7 +712,7 @@ def build_uclibc(options, argv):
 	for i in range(len(contents)):
 		contents[i] = contents[i].strip()
 
-		for k in change.keys():
+		for k in list(change.keys()):
 			if (contents[i].find(k + "=") != -1) or (contents[i].find(" " + k + " is not set") != -1):
 				enable = change[k][1]
 				if not enable: continue
@@ -811,7 +811,7 @@ def build_glibc(options, argv):
 
 	t = {"CC"  : "gcc", "CXX" : "g++", "AS"  : "as", "LD"  : "ld"}
 	endian = get_gcc_multilib_opt(argv, "mbig-endian", "r", "EB") or "EL"
-	for i in t.keys():
+	for i in list(t.keys()):
 		cmd += build_cmd(options, '%s=\"%s-%s -%s -%s\"', (i, get_target_name(options), t[i], get_gcc_multilib_opt(argv, "mcpu"), endian))
 
 	cmd += build_cmd(options, "CFLAGS=\"%s\"", get_gcc_multilib_compiler_flags(options, "glibc", argv))
@@ -867,7 +867,7 @@ def build_glibc(options, argv):
 def get_component_chain(options, mm):
 	(m, stage) = get_component(options, mm)
 	deps = ""
-	if "worker" in component[m].keys():
+	if "worker" in list(component[m].keys()):
 		deps = component[m]["worker"][stage][1]
 
 	mm = [mm]
@@ -904,7 +904,7 @@ def get_component_valid_chain(options, mm, init = False, get_components = False)
 				chain.extend(c)
 
 	for m in chain:
-		if m not in component.keys():
+		if m not in list(component.keys()):
 			attr = m.lstrip("-").replace("-", "_")
 			if hasattr(options, attr):
 				v = getattr(options, attr)
@@ -925,9 +925,9 @@ def get_component_valid_chain(options, mm, init = False, get_components = False)
 		if not init:
 			url = get_component_url(options, m)
 			if url["type"] != "local":
-				if "url" not in component[m].keys():
+				if "url" not in list(component[m].keys()):
 					continue
-				print "\n<-- component '%s' source code dir is not valid, please run with additional command '--init'" % m
+				print("\n<-- component '%s' source code dir is not valid, please run with additional command '--init'" % m)
 				return ""
 
 	if get_components: chain = cchain
@@ -936,9 +936,9 @@ def get_component_valid_chain(options, mm, init = False, get_components = False)
 def get_component_valid_compatibility(options, component_chain):
 	for mm in component_chain:
 		(mm, stage) = get_component(options, mm)
-		if "compatibility" in component[mm].keys():
+		if "compatibility" in list(component[mm].keys()):
 			if not component[mm]["compatibility"](options, component_chain):
-				print "<-- current component '%s' version '%s' has some compatibility problems" % (mm, get_component_version(options, mm))
+				print("<-- current component '%s' version '%s' has some compatibility problems" % (mm, get_component_version(options, mm)))
 				return False
 	return True
 
@@ -997,12 +997,12 @@ def build_toolchain_env(options, mm):
 		url = info["url"]
 
 		if type == "local":
-			print "\n<-- component '%s' source code url ['%s'] is ok" % (mm, url)
+			print("\n<-- component '%s' source code url ['%s'] is ok" % (mm, url))
 			return
 
 		# append all urls into ss, the first url is prefer
 		ss = [url]
-		if "url" in component[mm].keys():
+		if "url" in list(component[mm].keys()):
 			ss += [component[mm]["url"]]
 
 		cmd = ""
@@ -1010,17 +1010,17 @@ def build_toolchain_env(options, mm):
 			cmd = get_toolchain_component_url_cmd(options, mm, s)
 			if not cmd: continue
 
-			print "\n--> " + cmd
+			print("\n--> " + cmd)
 			(o, e, r) = cmd_exec(options, cmd)
 			if cmd_exec_is_error(r, e):
 				cmd = ""
 				continue
 			break
 		if not cmd:
-			print "\n<-- component '%s' source code url %s is not valid" % (mm, ss)
+			print("\n<-- component '%s' source code url %s is not valid" % (mm, ss))
 
 	component_chain = get_component_valid_chain(options, mm, True, True)
-	print "\n====> toolchain components = %s" % str(component_chain)
+	print("\n====> toolchain components = %s" % str(component_chain))
 
 	for mm in component_chain:
 		sdir = getattr(options, mm.replace("-", "_") + "_src")
@@ -1040,13 +1040,13 @@ def build_worker(options, mm, stage = 0):
 
 	worker = component[mm]["worker"][stage][0]
 
-	if "multilib" in component[mm].keys():
+	if "multilib" in list(component[mm].keys()):
 		param = component[mm]["multilib"]
 		tab = build_gcc_multilib(options, param)
 
 		for i in tab:
 			i = tuple(i)
-			print "\n--> multilib option: %s" % str(i)
+			print("\n--> multilib option: %s" % str(i))
 			f = get_finished_target(options, mm, stage, i)
 			if build_is_finished(options, f):
 				continue
@@ -1087,11 +1087,11 @@ def build_init(options):
 
 	if options.debug:
 		options.debug = options.debug.replace(" ", "").split(",")
-		if "*" in options.debug: options.debug = component.keys()
+		if "*" in options.debug: options.debug = list(component.keys())
 
 	if options.addon:
 		options.addon = options.addon.replace(" ", "").split(",")
-		if "*" in options.addon: options.addon = addons.keys()
+		if "*" in options.addon: options.addon = list(addons.keys())
 
 	if not options.build:
 		if not options.prefix:
@@ -1112,7 +1112,7 @@ def build_init(options):
 
 	options.linux_libc_headers_install = "%s/%s/libc/usr/include/" % (options.prefix, get_target_name(options))
 
-	for m in component.keys():
+	for m in list(component.keys()):
 		opt = m.replace("-", "_") + "_src"
 		t = getattr(options, opt).split(",")
 		setattr(options, opt, t[0])
@@ -1141,10 +1141,10 @@ def main():
 	                  help=("select libc (default: %s)" % profile["libc"][0]), metavar=str(profile["libc"]))
 
 	parser.add_option("-m", dest="component",
-					  help="select the component(with dependents) to build", metavar=str(component.keys()))
+					  help="select the component(with dependents) to build", metavar=str(list(component.keys())))
 
 	parser.add_option("--addon", dest="addon",
-					  help="enable addon to build (\"*\" means enable all addons, multiple addons are splited by \",\")", metavar=str(addons.keys()))
+					  help="enable addon to build (\"*\" means enable all addons, multiple addons are splited by \",\")", metavar=str(list(addons.keys())))
 
 	parser.add_option("--no-deps", dest="no_deps", help="ignore the dependent components if it exist (\"*\" means ignore all deps, multiple components are splited by \",\")")
 
@@ -1192,10 +1192,10 @@ def main():
 
 	component = dict(component, **addons)
 
-	for m in component.keys():
+	for m in list(component.keys()):
 		opt = m + "-src"
 		h = "select %s source code dir (default: %s/%s)" % (m, source_dirname, m)
-		if "comment" in component[m].keys(): h += " %s" % component[m]["comment"]
+		if "comment" in list(component[m].keys()): h += " %s" % component[m]["comment"]
 		parser.add_option("--" + opt, dest=opt.replace("-", "_"), default=source_dirname + "/" + m, help=(h))
 
 	(options, args) = parser.parse_args()
@@ -1217,7 +1217,7 @@ def main():
 
 	component_chain = get_component_valid_chain(options, mm)
 	if not component_chain: return
-	print "\n====> components chain = %s" % str(component_chain)
+	print("\n====> components chain = %s" % str(component_chain))
 
 	if not get_component_valid_compatibility(options, component_chain): return
 
@@ -1231,8 +1231,8 @@ def main():
 		build_worker(options, mm, stage)
 		build_return(options, mm, stage)
 
-	print "\n====> success to build component chain: %s" % str(component_chain)
-	print "--> install dir: %s\n" % options.prefix
+	print("\n====> success to build component chain: %s" % str(component_chain))
+	print("--> install dir: %s\n" % options.prefix)
 
 
 profile = {
@@ -1366,7 +1366,7 @@ def build_gcc_test(options, argv):
 		o = get_gcc_multilib_opt(opt, i)
 		a = get_gcc_multilib_opt(argv, i)
 		if o and a and o != a:
-			print "<-- current config is filtered out by option '%s'" % o
+			print("<-- current config is filtered out by option '%s'" % o)
 			return
 	for i in argv:
 		if i in opt:
@@ -1376,7 +1376,7 @@ def build_gcc_test(options, argv):
 		else:
 			ii = i[0] + "no-" + i[1:]
 		if ii in opt:
-			print "<-- current config is filtered out by option '%s'" % ii
+			print("<-- current config is filtered out by option '%s'" % ii)
 			return
 
 	debug = (get_component_is_debug(options, "gcc-test") and "-v -v -v") or ""
@@ -1435,7 +1435,7 @@ def build_gcc_test(options, argv):
 	cmd += build_cmd(options, "make check RUNTESTFLAGS=\"--target_board=%s %s SIM='%s' --outdir=%s %s\"", (board, testcase, sim, outdir, debug))
 	cmd_exec_with_checkerr(options, cmd)
 	build_gcc_test_patch(options, argv, False)
-	print "\n--> gcc-test install dir: %s" % outdir
+	print("\n--> gcc-test install dir: %s" % outdir)
 
 
 addons = {
